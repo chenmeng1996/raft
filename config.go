@@ -120,6 +120,7 @@ const (
 	SnapshotVersionMax = 1
 )
 
+// 节点配置
 // Config provides any necessary configuration for the Raft server.
 type Config struct {
 	// ProtocolVersion allows a Raft server to inter-operate with older

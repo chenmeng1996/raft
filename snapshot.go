@@ -35,6 +35,7 @@ type SnapshotMeta struct {
 	Size int64
 }
 
+// 存储快照信息
 // SnapshotStore interface is used to allow for flexible implementations
 // of snapshot storage and retrieval. For example, a client could implement
 // a shared state store such as S3, allowing new nodes to restore snapshots

@@ -8,7 +8,7 @@ import (
 	"github.com/armon/go-metrics"
 )
 
-// 定义了操作日志的有限状态机的行为
+// 有限状态机
 // FSM provides an interface that can be implemented by
 // clients to make use of the replicated log.
 type FSM interface {

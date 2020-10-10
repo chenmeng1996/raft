@@ -23,6 +23,7 @@ func (r *RPC) Respond(resp interface{}, err error) {
 	r.RespChan <- RPCResponse{resp, err}
 }
 
+// raft节点内部的通信通道
 // Transport provides an interface for network transports
 // to allow Raft to communicate with other nodes.
 type Transport interface {

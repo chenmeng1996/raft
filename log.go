@@ -64,6 +64,7 @@ type Log struct {
 	Extensions []byte
 }
 
+// 存储raft日志
 // LogStore is used to provide an interface for storing
 // and retrieving logs in a durable fashion.
 type LogStore interface {
