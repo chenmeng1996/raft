@@ -19,6 +19,7 @@ const (
 	// Leader is one of the valid states of a Raft node.
 	Leader
 
+	// 特有的状态，表示节点下线
 	// Shutdown is the terminal state of a Raft node.
 	Shutdown
 )

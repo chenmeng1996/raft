@@ -8,15 +8,19 @@ import (
 	"github.com/armon/go-metrics"
 )
 
+// 定义了操作日志的有限状态机的行为
 // FSM provides an interface that can be implemented by
 // clients to make use of the replicated log.
 type FSM interface {
+	// 追加日志
 	// Apply log is invoked once a log entry is committed.
 	// It returns a value which will be made available in the
 	// ApplyFuture returned by Raft.Apply method if that
 	// method was called on the same Raft node as the FSM.
 	Apply(*Log) interface{}
 
+	// 将当前日志进行快照备份
+	// 该方法不能和Apply方法在不同的线程运行
 	// Snapshot is used to support log compaction. This call should
 	// return an FSMSnapshot which can be used to save a point-in-time
 	// snapshot of the FSM. Apply and Snapshot are not called in multiple
@@ -25,6 +29,7 @@ type FSM interface {
 	// updates while a snapshot is happening.
 	Snapshot() (FSMSnapshot, error)
 
+	// 从快照中恢复 FSM 状态，一旦被调用， FSM 必须暂停其他所有调用和状态，直到恢复完毕
 	// Restore is used to restore an FSM from a snapshot. It is not called
 	// concurrently with any other command. The FSM must discard all previous
 	// state.
@@ -72,6 +77,7 @@ func (r *Raft) runFSM() {
 	batchingFSM, batchingEnabled := r.fsm.(BatchingFSM)
 	configStore, configStoreEnabled := r.fsm.(ConfigurationStore)
 
+	// 提交单条日志函数
 	commitSingle := func(req *commitTuple) {
 		// Apply the log if a command or config change
 		var resp interface{}
@@ -102,11 +108,13 @@ func (r *Raft) runFSM() {
 			metrics.MeasureSince([]string{"raft", "fsm", "store_config"}, start)
 		}
 
+		// 更新最后一条日志的索引/值
 		// Update the indexes
 		lastIndex = req.log.Index
 		lastTerm = req.log.Term
 	}
 
+	// 提交多条日志函数
 	commitBatch := func(reqs []*commitTuple) {
 		if !batchingEnabled {
 			for _, ct := range reqs {
@@ -168,6 +176,7 @@ func (r *Raft) runFSM() {
 		}
 	}
 
+	// 恢复快照函数
 	restore := func(req *restoreFuture) {
 		// Open the snapshot
 		meta, source, err := r.snapshots.Open(req.ID)
@@ -192,6 +201,7 @@ func (r *Raft) runFSM() {
 		req.respond(nil)
 	}
 
+	// 快照备份函数
 	snapshot := func(req *reqSnapshotFuture) {
 		// Is there something to snapshot?
 		if lastIndex == 0 {
@@ -213,7 +223,7 @@ func (r *Raft) runFSM() {
 
 	for {
 		select {
-		case ptr := <-r.fsmMutateCh:
+		case ptr := <-r.fsmMutateCh: // 提交日志通知
 			switch req := ptr.(type) {
 			case []*commitTuple:
 				commitBatch(req)
@@ -225,10 +235,10 @@ func (r *Raft) runFSM() {
 				panic(fmt.Errorf("bad type passed to fsmMutateCh: %#v", ptr))
 			}
 
-		case req := <-r.fsmSnapshotCh:
+		case req := <-r.fsmSnapshotCh: // 快照通知
 			snapshot(req)
 
-		case <-r.shutdownCh:
+		case <-r.shutdownCh: // 关闭goroutine通知
 			return
 		}
 	}

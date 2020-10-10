@@ -127,9 +127,9 @@ func (r *Raft) run() {
 	for {
 		// Check if we are doing a shutdown
 		select {
-		case <-r.shutdownCh:
+		case <-r.shutdownCh: // 会被 close(r.shutdownCh) 触发
 			// Clear the leader to prevent forwarding
-			r.setLeader("")
+			r.setLeader("") // 不再联系leader节点
 			return
 		default:
 		}
@@ -146,6 +146,7 @@ func (r *Raft) run() {
 	}
 }
 
+// 只有follower状态的节点会运行
 // runFollower runs the FSM for a follower.
 func (r *Raft) runFollower() {
 	didWarn := false
@@ -156,7 +157,7 @@ func (r *Raft) runFollower() {
 	for r.getState() == Follower {
 		select {
 		case rpc := <-r.rpcCh:
-			r.processRPC(rpc)
+			r.processRPC(rpc) // 根据 rpc 的类型进行 日志追加/备份快照 等操作
 
 		case c := <-r.configurationChangeCh:
 			// Reject any operations since we are not the leader
@@ -186,20 +187,22 @@ func (r *Raft) runFollower() {
 			b.respond(r.liveBootstrap(b.configuration))
 
 		case <-heartbeatTimer:
+			// 重设一个随机的心跳定时器
 			// Restart the heartbeat timer
 			heartbeatTimer = randomTimeout(r.conf.HeartbeatTimeout)
 
 			// Check if we have had a successful contact
-			lastContact := r.LastContact()
+			lastContact := r.LastContact() // 上一次与leader联系的时间
 			if time.Now().Sub(lastContact) < r.conf.HeartbeatTimeout {
-				continue
+				continue // 能联系上leader，继续下次操作
 			}
 
+			// 联系不上leader了，重新开始投票
 			// Heartbeat failed! Transition to the candidate state
-			lastLeader := r.Leader()
-			r.setLeader("")
+			lastLeader := r.Leader() // 记录上一个leader
+			r.setLeader("")          // 离开这个leader所在集群
 
-			if r.configurations.latestIndex == 0 {
+			if r.configurations.latestIndex == 0 { // 没有其他可以通信的节点，终止选举
 				if !didWarn {
 					r.logger.Warn("no known peers, aborting election")
 					didWarn = true

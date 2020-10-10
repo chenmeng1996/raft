@@ -438,6 +438,7 @@ func HasExistingState(logs LogStore, stable StableStore, snaps SnapshotStore) (b
 	return false, nil
 }
 
+// 创建一个Raft节点
 // NewRaft is used to construct a new Raft node. It takes a configuration, as well
 // as implementations of various interfaces that are required. If we have any
 // old state, such as snapshots, logs, peers, etc, all those will be restored
@@ -524,6 +525,7 @@ func NewRaft(conf *Config, fsm FSM, logs LogStore, stable StableStore, snaps Sna
 		leadershipTransferCh:  make(chan *leadershipTransferFuture, 1),
 	}
 
+	// 默认为follower
 	// Initialize as a follower.
 	r.setState(Follower)
 
@@ -559,9 +561,9 @@ func NewRaft(conf *Config, fsm FSM, logs LogStore, stable StableStore, snaps Sna
 		return r, nil
 	}
 	// Start the background work.
-	r.goFunc(r.run)
-	r.goFunc(r.runFSM)
-	r.goFunc(r.runSnapshots)
+	r.goFunc(r.run)          // 管理server状态
+	r.goFunc(r.runFSM)       // 管理状态机
+	r.goFunc(r.runSnapshots) // 管理快照
 	return r, nil
 }
 
