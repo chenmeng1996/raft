@@ -1,6 +1,6 @@
 package raft
 
-// 稳定存储，用来存储raft集群的节点信息
+// 节点信息存储器，用来存储raft集群的节点信息
 // StableStore is used to provide stable storage
 // of key configurations to ensure safety.
 type StableStore interface {

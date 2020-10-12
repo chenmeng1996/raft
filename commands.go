@@ -1,5 +1,6 @@
 package raft
 
+// RPC请求的通用信息
 // RPCHeader is a common sub-structure used to pass along protocol version and
 // other information about the cluster. For older Raft implementations before
 // versioning was added this will default to a zero-valued structure when read
@@ -10,11 +11,13 @@ type RPCHeader struct {
 	ProtocolVersion ProtocolVersion
 }
 
+// 暴露RPCHeader
 // WithRPCHeader is an interface that exposes the RPC header.
 type WithRPCHeader interface {
 	GetRPCHeader() RPCHeader
 }
 
+// 追加日志
 // AppendEntriesRequest is the command used to append entries to the
 // replicated log.
 type AppendEntriesRequest struct {
@@ -64,6 +67,7 @@ func (r *AppendEntriesResponse) GetRPCHeader() RPCHeader {
 	return r.RPCHeader
 }
 
+// 投票请求
 // RequestVoteRequest is the command used by a candidate to ask a Raft peer
 // for a vote in an election.
 type RequestVoteRequest struct {
@@ -109,6 +113,7 @@ func (r *RequestVoteResponse) GetRPCHeader() RPCHeader {
 	return r.RPCHeader
 }
 
+// 使用另外一个raft节点来重置当前节点的日志和状态机
 // InstallSnapshotRequest is the command sent to a Raft peer to bootstrap its
 // log (and state machine) from a snapshot on another peer.
 type InstallSnapshotRequest struct {
@@ -155,6 +160,7 @@ func (r *InstallSnapshotResponse) GetRPCHeader() RPCHeader {
 	return r.RPCHeader
 }
 
+// leader通知其他节点开始leader选举
 // TimeoutNowRequest is the command used by a leader to signal another server to
 // start an election.
 type TimeoutNowRequest struct {

@@ -8,6 +8,7 @@ import (
 	"github.com/armon/go-metrics"
 )
 
+// 快照元数据，将存储在meta.json文件中
 // SnapshotMeta is for metadata of a snapshot.
 type SnapshotMeta struct {
 	// Version is the version number of the snapshot metadata. This does not cover
@@ -35,7 +36,7 @@ type SnapshotMeta struct {
 	Size int64
 }
 
-// 存储快照信息
+// 快照存储器 接口
 // SnapshotStore interface is used to allow for flexible implementations
 // of snapshot storage and retrieval. For example, a client could implement
 // a shared state store such as S3, allowing new nodes to restore snapshots
@@ -56,6 +57,7 @@ type SnapshotStore interface {
 	Open(id string) (*SnapshotMeta, io.ReadCloser, error)
 }
 
+// 快照落地器 接口
 // SnapshotSink is returned by StartSnapshot. The FSM will Write state
 // to the sink and call Close on completion. On error, Cancel will be invoked.
 type SnapshotSink interface {
